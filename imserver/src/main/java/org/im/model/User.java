@@ -1,4 +1,4 @@
-package org.im.imserver.model;
+package org.im.model;
 
 /**
  * 用户类
@@ -9,6 +9,17 @@ public class User {
 	private String userId;
 	private String uname;
 	private String pwd;
+	
+	public User() {
+		super();
+	}
+	
+	public User(String userId, String uname, String pwd) {
+		super();
+		this.userId = userId;
+		this.uname = uname;
+		this.pwd = pwd;
+	}
 	
 	public String getUserId() {
 		return userId;

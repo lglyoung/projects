@@ -3,11 +3,11 @@ package org.im.imclient;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import org.im.imserver.config.PackageType;
-import org.im.imserver.model.Header;
-import org.im.imserver.model.Body;
-import org.im.imserver.model.User;
-import org.im.imserver.util.JsonUtil;
+import org.im.config.PackageInfo;
+import org.im.model.Package;
+import org.im.model.User;
+import org.im.util.JsonUtil;
+import org.im.util.RWUtil;
 
 /**
  * 程序入口类
@@ -20,34 +20,13 @@ public class ImClientMain {
 		imClient.start("127.0.0.1", 9000);
 		SocketChannel sc = imClient.getSc();
 		
-		//要发送给服务器的报文
-		User user = new User();
-		user.set("10001", "lglyoung", "yy0725");
-		Body text = new Body();
-		text.setUser(user);
-		text.setContent("nothing...");
-		String textJson = JsonUtil.toJson(text);
-
-		//要发送的头
-		Header header = new Header(textJson.getBytes().length, PackageType.TEXT);
-		String headerJson = JsonUtil.toJson(header);
+		//要发的报文
+		Package pack = new Package();
+		pack.setType(PackageInfo.SEND_MSG_CMD);
+		pack.setFrom(new User("10001", "lglyoung", "yy0725"));
+		pack.setTo(new User("10002", "young", "yy0725"));
 		
-		//发送
-		ByteBuffer buffer = ByteBuffer.allocate(4+headerJson.getBytes().length+textJson.getBytes().length);
-		buffer.putInt(headerJson.getBytes().length);
-		buffer.put(headerJson.getBytes());
-		buffer.put(textJson.getBytes());
-		
-		//为读数据做好准备
-		buffer.flip();
-		while(buffer.hasRemaining()) {
-			sc.write(buffer);
-		}
-		
-		buffer.flip();
-		while(buffer.hasRemaining()) {
-			sc.write(buffer);
-		}
+		RWUtil.writeToSc(sc, pack);
 		
 		//释放资源
 		ImClient.getInstance().stop();

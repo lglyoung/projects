@@ -1,4 +1,4 @@
-package org.im.imserver.util;
+package org.im.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

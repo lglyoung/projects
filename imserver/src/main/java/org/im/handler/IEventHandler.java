@@ -1,4 +1,4 @@
-package org.im.imserver;
+package org.im.handler;
 
 /**
  * 接口:事件处理器

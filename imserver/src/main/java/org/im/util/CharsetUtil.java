@@ -1,4 +1,4 @@
-package org.im.imserver.util;
+package org.im.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

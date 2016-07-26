@@ -1,13 +1,13 @@
-package org.im.imserver;
+package org.im.handler;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-import org.im.imserver.model.Body;
-import org.im.imserver.model.Header;
-import org.im.imserver.util.ReceiverUtil;
+import org.im.imserver.ImServer;
+import org.im.model.Package;
+import org.im.util.RWUtil;
 
 /**
  * 读处理器
@@ -20,9 +20,8 @@ public class ReadHandler implements IEventHandler {
 	private boolean is4BytesReceived = false;
 	
 	private ByteBuffer first4BytesBuff = ByteBuffer.allocate(4);	//保存报文段前4个字节
-	private ByteBuffer headerBuff;				//保存头部
-	private Header header;
-	private Body body;
+	private ByteBuffer packageBuff;
+	private Package pack;
 		
 	/**
 	 * 构造器
@@ -36,69 +35,42 @@ public class ReadHandler implements IEventHandler {
 
 	@Override
 	public void handle() throws Exception {
-		if(header == null) {
-			//读取头部
-			header = readHeader();
-		} else {	//成功读到header
-			body = readBody();
-			if(body != null) {
-				//1 把header和body传递出去
-				System.out.println(header.toString()+body.toString());				
-				
-				//2 初始化
-				init();
-			}
+		if(pack == null) {
+			pack = readPackage();
+		} else {
+			//1
+			System.out.println(pack);
+			
+			//2
+			init();
 		}
 	}
 	
 	/**
-	 * 读取头部
-	 * @author lglyoung 2016.07.24
+	 * 读取报文
+	 * @author lglyoung 2016.07.26
 	 * @version 1.0.0
 	 */
-	public Header readHeader() {
+	public Package readPackage() {
 		if(!is4BytesReceived) {
-			int r = ReceiverUtil.readFromSc(sc, first4BytesBuff);
+			int r = RWUtil.readFromSc(sc, first4BytesBuff);
 			if(r == 1) {
 				is4BytesReceived = true; 	//成功接收报文的前4个字节					
 			} else if(r == -1) {			//对方的socket channel关闭
 				closeSc();
 			}	
 		} else {
-			if(headerBuff == null) {
+			if(packageBuff == null) {
 				first4BytesBuff.flip();		//为读取做好准备
-				headerBuff = ByteBuffer.allocate(first4BytesBuff.getInt());
+				packageBuff = ByteBuffer.allocate(first4BytesBuff.getInt());
 			}
-			if(header == null) {
-				int r = ReceiverUtil.readFromSc(sc, headerBuff);
-				if(r == 1) {
-					headerBuff.flip();			//为读取做好准备
-					header = ReceiverUtil.readObjFromBuff(headerBuff, Header.class);
-					
-					//返回header对象
-					return header;
-				} else if(r == -1) {			//对方的socket channel关闭
-					closeSc();
-				}
-			}	
-		}
-		return null;
-	}
-	
-	/**
-	 * 读取body
-	 * @author lglyoung 2016.07.25
-	 * @version 1.0.0
-	 */
-	public Body readBody() {
-		ByteBuffer contentBuff = ByteBuffer.allocate(header.getContentLen());
-		int r = ReceiverUtil.readFromSc(sc, contentBuff);
-		if(r == 1) {
-			contentBuff.flip();
-			body = ReceiverUtil.readObjFromBuff(contentBuff, Body.class);
-			return body;
-		} else if(r == -1) {
-			closeSc();
+			int r = RWUtil.readFromSc(sc, packageBuff);
+			if(r == 1) {
+				packageBuff.flip();			//为读取做好准备
+				return RWUtil.readObjFromBuff(packageBuff, Package.class);
+			} else if(r == -1) {			//对方的socket channel关闭
+				closeSc();
+			}
 		}
 		return null;
 	}
@@ -128,8 +100,7 @@ public class ReadHandler implements IEventHandler {
 	private void init() {
 		is4BytesReceived = false;
 		first4BytesBuff.clear();
-		headerBuff = null;
-		header = null;
-		body = null;
+		packageBuff = null;
+		pack = null;
 	}
 }
