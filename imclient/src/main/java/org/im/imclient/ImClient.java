@@ -5,7 +5,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.Charset;
 
 /**
  * 即时通信系统客户端类
@@ -15,7 +14,6 @@ import java.nio.charset.Charset;
 public class ImClient {
 	private Selector selector;
 	private SocketChannel sc;							//客户端socket
-	private Charset charset = Charset.forName("UTF-8");	
 	private static ImClient imClient = new ImClient();
 	
 	/**

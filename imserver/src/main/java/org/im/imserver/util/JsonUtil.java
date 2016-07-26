@@ -24,6 +24,10 @@ public class JsonUtil {
 		return json;
 	}
 	
+	/**
+	 * 将json字符串转成pojo对象
+	 * @return
+	 */
 	public static <T> T fromJson(String json, Class<T> type) {
 		T pojo = null;
 		try {

@@ -28,17 +28,6 @@ public class ImServer {
 	 * @version 1.0.0
 	 */
 	private class AcceptHandler implements IEventHandler {
-		private SelectionKey key;
-		
-		/**
-		 * 有参构造器
-		 * @author lglyoung 2016.07.24
-		 * @version 1.0.0
-		 */
-		public AcceptHandler(SelectionKey key) {
-			this.key = key;
-		}
-
 		@Override
 		public void handle() throws Exception {
 			ServerSocketChannel ssc = (ServerSocketChannel) serverKey.channel();
@@ -92,7 +81,7 @@ public class ImServer {
 			ssc.configureBlocking(false);
 			ssc.bind(new InetSocketAddress(IP, PORT));
 			serverKey = ssc.register(selector, SelectionKey.OP_ACCEPT);
-			serverKey.attach(new AcceptHandler(serverKey));
+			serverKey.attach(new AcceptHandler());
 			System.out.println("imserver starts successfully...");
 			
 			//监听连接
@@ -178,6 +167,7 @@ public class ImServer {
 	 * @version 1.0.0
 	 * @return boolean 如果服务器停止成功，则返回true，否则返回false
 	 */
+	@SuppressWarnings("unused")
 	private boolean stop() {
 		
 		return false;

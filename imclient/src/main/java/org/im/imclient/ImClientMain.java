@@ -5,7 +5,7 @@ import java.nio.channels.SocketChannel;
 
 import org.im.imserver.config.PackageType;
 import org.im.imserver.model.Header;
-import org.im.imserver.model.Text;
+import org.im.imserver.model.Body;
 import org.im.imserver.model.User;
 import org.im.imserver.util.JsonUtil;
 
@@ -23,7 +23,7 @@ public class ImClientMain {
 		//要发送给服务器的报文
 		User user = new User();
 		user.set("10001", "lglyoung", "yy0725");
-		Text text = new Text();
+		Body text = new Body();
 		text.setUser(user);
 		text.setContent("nothing...");
 		String textJson = JsonUtil.toJson(text);
@@ -39,6 +39,11 @@ public class ImClientMain {
 		buffer.put(textJson.getBytes());
 		
 		//为读数据做好准备
+		buffer.flip();
+		while(buffer.hasRemaining()) {
+			sc.write(buffer);
+		}
+		
 		buffer.flip();
 		while(buffer.hasRemaining()) {
 			sc.write(buffer);

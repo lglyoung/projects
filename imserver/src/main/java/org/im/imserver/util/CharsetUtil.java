@@ -26,7 +26,7 @@ public class CharsetUtil {
 	 * @param str
 	 * @return
 	 */
-	public static String decoder(ByteBuffer buffer) {
+	public static String decode(ByteBuffer buffer) {
 		return CHARSET.decode(buffer).toString();
 	}
 }

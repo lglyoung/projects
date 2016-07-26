@@ -28,4 +28,9 @@ public class JsonUtilTest {
 		ByteBuffer buff = charset.encode(str);
 		System.out.println(buff.remaining());
 	}
+	
+	@Test
+	public void throwRuntimeTest() {
+		throw new RuntimeException("test");
+	}
 }

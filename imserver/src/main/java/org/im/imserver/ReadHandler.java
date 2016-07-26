@@ -5,11 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-import org.im.imserver.config.PackageType;
+import org.im.imserver.model.Body;
 import org.im.imserver.model.Header;
-import org.im.imserver.model.Text;
-import org.im.imserver.util.CharsetUtil;
-import org.im.imserver.util.JsonUtil;
+import org.im.imserver.util.ReceiverUtil;
 
 /**
  * 读处理器
@@ -19,13 +17,12 @@ import org.im.imserver.util.JsonUtil;
 public class ReadHandler implements IEventHandler {
 	private SocketChannel sc;
 	private SelectionKey key;
-	private boolean isStartReceived = false;	//如果为true，表明还没接收完上次的发送的数据
-	private ByteBuffer first4BytesBuff;			//保存报文段前4个字节
-	private ByteBuffer headerBuff;				//保存头部	
-	private ByteBuffer contentBuff; 			//保存内容
+	private boolean is4BytesReceived = false;
+	
+	private ByteBuffer first4BytesBuff = ByteBuffer.allocate(4);	//保存报文段前4个字节
+	private ByteBuffer headerBuff;				//保存头部
 	private Header header;
-	private int HeaderBytesLen = -1;			//头部的字节数
-	private int contentBytesLen = -1;			//内容的字节数
+	private Body body;
 		
 	/**
 	 * 构造器
@@ -39,91 +36,71 @@ public class ReadHandler implements IEventHandler {
 
 	@Override
 	public void handle() throws Exception {
-		if(!isStartReceived) {
-			isStartReceived = true;
-			readPackageFirst4Int();
-		} else {
-			if(HeaderBytesLen == -1) {
-				readPackageFirst4Int();
-			} else {
-				if(header == null) {
-					readHeader();					
-				} else {
-					readContent();
-				}
-			}
-		}
-	}
-	
-	/**
-	 * 读报文的前4个字节
-	 * @author lglyoung 2016.07.24
-	 * @version 1.0.0
-	 * @throws IOException 
-	 */
-	public void readPackageFirst4Int() throws IOException {
-		if(first4BytesBuff == null) {
-			first4BytesBuff = ByteBuffer.allocate(4);
-		}
-		
-		int readNum = 0;
-		for(readNum = sc.read(first4BytesBuff); readNum > 0; readNum = sc.read(first4BytesBuff)) {
-			if(first4BytesBuff.position() == 4) {
-				first4BytesBuff.flip();
-				HeaderBytesLen = first4BytesBuff.getInt();
-			}
-			closeSc(readNum);
-		}	
-
-	}
-	
-	/**
-	 * 读报文头
-	 * @author lglyoung 2016.07.24
-	 * @version 1.0.0
-	 * @throws IOException 
-	 */
-	public void readHeader() throws IOException {
-		if(headerBuff == null) {
-			headerBuff = ByteBuffer.allocate(HeaderBytesLen);
-		} 
-		
-		int readNum = 0;
-		for(readNum = sc.read(headerBuff); readNum > 0; readNum = sc.read(headerBuff)) {
-			if(headerBuff.position() == HeaderBytesLen) {
-				headerBuff.flip();
-				header = JsonUtil.fromJson(CharsetUtil.decoder(headerBuff), Header.class);
-				System.out.println(header);
-			}
-			closeSc(readNum);
-		}	
-
-	}
-	
-	/**
-	 * 读内容
-	 * @author lglyoung 2016.07.24
-	 * @version 1.0.0
-	 * @throws IOException 
-	 */
-	public void readContent() throws IOException {
-		if(contentBuff == null) {
-			contentBuff = ByteBuffer.allocate(header.getContentLen());
-		} 
-		
-		int readNum = 0;
-		for(readNum = sc.read(contentBuff); readNum > 0; readNum = sc.read(contentBuff)) {
-			if(contentBuff.position() == header.getContentLen()) {
-				contentBuff.flip();
-				if(header.getPackageType().equals(PackageType.TEXT)) {
-					Text text = JsonUtil.fromJson(CharsetUtil.decoder(contentBuff), Text.class);
-					System.out.println(text);
-				}
+		if(header == null) {
+			//读取头部
+			header = readHeader();
+		} else {	//成功读到header
+			body = readBody();
+			if(body != null) {
+				//1 把header和body传递出去
+				System.out.println(header.toString()+body.toString());				
 				
-				initAfterReceived();
+				//2 初始化
+				init();
 			}
-			closeSc(readNum);
-		}	
+		}
+	}
+	
+	/**
+	 * 读取头部
+	 * @author lglyoung 2016.07.24
+	 * @version 1.0.0
+	 */
+	public Header readHeader() {
+		if(!is4BytesReceived) {
+			int r = ReceiverUtil.readFromSc(sc, first4BytesBuff);
+			if(r == 1) {
+				is4BytesReceived = true; 	//成功接收报文的前4个字节					
+			} else if(r == -1) {			//对方的socket channel关闭
+				closeSc();
+			}	
+		} else {
+			if(headerBuff == null) {
+				first4BytesBuff.flip();		//为读取做好准备
+				headerBuff = ByteBuffer.allocate(first4BytesBuff.getInt());
+			}
+			if(header == null) {
+				int r = ReceiverUtil.readFromSc(sc, headerBuff);
+				if(r == 1) {
+					headerBuff.flip();			//为读取做好准备
+					header = ReceiverUtil.readObjFromBuff(headerBuff, Header.class);
+					
+					//返回header对象
+					return header;
+				} else if(r == -1) {			//对方的socket channel关闭
+					closeSc();
+				}
+			}	
+		}
+		return null;
+	}
+	
+	/**
+	 * 读取body
+	 * @author lglyoung 2016.07.25
+	 * @version 1.0.0
+	 */
+	public Body readBody() {
+		ByteBuffer contentBuff = ByteBuffer.allocate(header.getContentLen());
+		int r = ReceiverUtil.readFromSc(sc, contentBuff);
+		if(r == 1) {
+			contentBuff.flip();
+			body = ReceiverUtil.readObjFromBuff(contentBuff, Body.class);
+			return body;
+		} else if(r == -1) {
+			closeSc();
+		}
+		return null;
 	}
 	
 	/**
@@ -131,14 +108,16 @@ public class ReadHandler implements IEventHandler {
 	 * @author lglyoung 2016.07.24
 	 * @version 1.0.0
 	 */
-	public void closeSc(int readNum) throws IOException {
-		//如果客户端断开连接
-		if(readNum == -1) {
-			System.out.println("server closed a socket");
+	public void closeSc() {
+		System.out.println("server closed a socket");
+		try {
 			sc.close();
-			int curConnNum = ImServer.getInstance().getConnNum()-1;
-			ImServer.getInstance().setConnNum(curConnNum);
+		} catch (IOException e) {
+			throw new RuntimeException();
 		}
+		key.cancel();
+		int curConnNum = ImServer.getInstance().getConnNum()-1;
+		ImServer.getInstance().setConnNum(curConnNum);
 	}
 	
 	/**
@@ -146,11 +125,11 @@ public class ReadHandler implements IEventHandler {
 	 * @author lglyoung 2016.07.24
 	 * @version 1.0.0
 	 */
-	private void initAfterReceived() {
-		isStartReceived = false;
-		first4BytesBuff = null;
+	private void init() {
+		is4BytesReceived = false;
+		first4BytesBuff.clear();
 		headerBuff = null;
 		header = null;
-		contentBuff = null;
+		body = null;
 	}
 }

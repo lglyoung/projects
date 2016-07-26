@@ -5,7 +5,7 @@ package org.im.imserver.model;
  * @author lglyoung 2016.07.24
  * @version 1.0.0
  */
-public class Text {
+public class Body {
 	private User user;
 	private String content;
 
@@ -24,6 +24,6 @@ public class Text {
 
 	@Override
 	public String toString() {
-		return "TextMessage [user=" + user + ", content=" + content + "]";
+		return "Body [user=" + user + ", content=" + content + "]";
 	}
 }
