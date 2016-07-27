@@ -1,13 +1,12 @@
 package org.im.imclient;
 
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Scanner;
 
-import org.im.config.PackageInfo;
-import org.im.model.Package;
-import org.im.model.User;
-import org.im.util.JsonUtil;
-import org.im.util.RWUtil;
+import org.im.commons.config.PackageInfo;
+import org.im.commons.model.Pack;
+import org.im.commons.model.User;
+import org.im.commons.util.RWUtil;
 
 /**
  * 程序入口类
@@ -19,12 +18,30 @@ public class ImClientMain {
 		ImClient imClient = ImClient.getInstance();
 		imClient.start("127.0.0.1", 9000);
 		SocketChannel sc = imClient.getSc();
+		User fromUser = new User("10001", "lglyoung", "yy0725");
+		User toUser = new User("10002", "young", "yy0725");
 		
 		//要发的报文
-		Package pack = new Package();
+		Pack pack = new Pack();
 		pack.setType(PackageInfo.SEND_MSG_CMD);
-		pack.setFrom(new User("10001", "lglyoung", "yy0725"));
-		pack.setTo(new User("10002", "young", "yy0725"));
+		pack.setFrom(fromUser);
+		pack.setTo(toUser);
+		
+		Scanner scan = new Scanner(System.in);
+		System.out.print(fromUser.getUserId()+" > ");
+		while(scan.hasNext()) {
+			System.out.print(fromUser.getUserId()+" > ");
+			String readIn = scan.nextLine();
+			if(readIn.trim().equals("")) continue;
+			String[] cmdAndOpiton = readIn.split(" ");
+			if(cmdAndOpiton[0].equals("exit")) {
+				break;
+			} else if(cmdAndOpiton[0].equals("st")) {		//send text
+				
+			}
+			
+		}
+		scan.close();
 		
 		RWUtil.writeToSc(sc, pack);
 		
