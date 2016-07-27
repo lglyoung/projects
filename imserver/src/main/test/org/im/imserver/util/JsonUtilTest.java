@@ -3,7 +3,7 @@ package org.im.imserver.util;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-import org.im.util.JsonUtil;
+import org.im.commons.util.JsonUtil;
 import org.junit.Test;
 
 

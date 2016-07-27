@@ -5,9 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import org.im.commons.model.Pack;
+import org.im.commons.util.RWUtil;
 import org.im.imserver.ImServer;
-import org.im.model.Package;
-import org.im.util.RWUtil;
 
 /**
  * 读处理器
@@ -21,7 +21,7 @@ public class ReadHandler implements IEventHandler {
 	
 	private ByteBuffer first4BytesBuff = ByteBuffer.allocate(4);	//保存报文段前4个字节
 	private ByteBuffer packageBuff;
-	private Package pack;
+	private Pack pack;
 		
 	/**
 	 * 构造器
@@ -51,7 +51,7 @@ public class ReadHandler implements IEventHandler {
 	 * @author lglyoung 2016.07.26
 	 * @version 1.0.0
 	 */
-	public Package readPackage() {
+	public Pack readPackage() {
 		if(!is4BytesReceived) {
 			int r = RWUtil.readFromSc(sc, first4BytesBuff);
 			if(r == 1) {
@@ -67,7 +67,7 @@ public class ReadHandler implements IEventHandler {
 			int r = RWUtil.readFromSc(sc, packageBuff);
 			if(r == 1) {
 				packageBuff.flip();			//为读取做好准备
-				return RWUtil.readObjFromBuff(packageBuff, Package.class);
+				return RWUtil.readObjFromBuff(packageBuff, Pack.class);
 			} else if(r == -1) {			//对方的socket channel关闭
 				closeSc();
 			}

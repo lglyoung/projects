@@ -2,7 +2,7 @@ package org.im.imserver.util;
 
 import java.nio.ByteBuffer;
 
-import org.im.util.CharsetUtil;
+import org.im.commons.util.CharsetUtil;
 import org.junit.Test;
 
 public class CharsetUtilTest {
