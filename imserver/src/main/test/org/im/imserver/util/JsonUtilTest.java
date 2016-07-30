@@ -33,4 +33,6 @@ public class JsonUtilTest {
 	public void throwRuntimeTest() {
 		throw new RuntimeException("test");
 	}
+	
+	
 }

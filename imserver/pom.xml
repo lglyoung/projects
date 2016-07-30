@@ -4,14 +4,7 @@
   <artifactId>imserver</artifactId>
   <version>1.0.0</version>
   
-	<dependencies>
-		<!-- imcommons -->
-		<dependency>
-			<groupId>imcommons</groupId>
-  			<artifactId>imcommons</artifactId>
-  			<version>1.0.0</version>
-		</dependency>
-		
+	<dependencies>		
 		<!-- junit -->
 		<dependency>
     		<groupId>junit</groupId>

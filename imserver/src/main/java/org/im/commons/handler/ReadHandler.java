@@ -1,20 +1,22 @@
-package org.im.handler;
+package org.im.commons.handler;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+import org.im.application.AbstractApplication;
+import org.im.commons.config.InfoTip;
 import org.im.commons.model.Pack;
+import org.im.commons.thread.HandlePackRunnable;
 import org.im.commons.util.RWUtil;
-import org.im.imserver.ImServer;
 
 /**
  * 读处理器
  * @author lglyoung 2016.07.24
  * @version 1.0.0
  */
-public class ReadHandler implements IEventHandler {
+public class ReadHandler extends AbstractEventHandler {
 	private SocketChannel sc;
 	private SelectionKey key;
 	private boolean is4BytesReceived = false;
@@ -28,20 +30,23 @@ public class ReadHandler implements IEventHandler {
 	 * @author lglyoung 2016.07.24
 	 * @version 1.0.0
 	 */
-	public ReadHandler(SelectionKey key) {
+	public ReadHandler(AbstractApplication app, SelectionKey key) {
 		this.key = key;
 		sc = (SocketChannel) key.channel();
+		this.app = app;
 	}
 
 	@Override
 	public void handle() throws Exception {
 		if(pack == null) {
 			pack = readPackage();
-		} else {
-			//1
-			System.out.println(pack);
+		}
+		if(pack != null) {
+			//1 创建一个线程来处理请求包
+			Runnable r = new HandlePackRunnable(key, pack);
+			app.getWorkerThreadPoll().submit(r);
 			
-			//2
+			//2 初始化，等待新的请求包到来
 			init();
 		}
 	}
@@ -81,15 +86,14 @@ public class ReadHandler implements IEventHandler {
 	 * @version 1.0.0
 	 */
 	public void closeSc() {
-		System.out.println("server closed a socket");
+		System.out.println(InfoTip.SOCKET_CLOSE);
 		try {
 			sc.close();
 		} catch (IOException e) {
 			throw new RuntimeException();
 		}
 		key.cancel();
-		int curConnNum = ImServer.getInstance().getConnNum()-1;
-		ImServer.getInstance().setConnNum(curConnNum);
+		app.setConnNum(app.getConnNum()-1);
 	}
 	
 	/**
